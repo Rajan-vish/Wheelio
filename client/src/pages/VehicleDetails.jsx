@@ -1,0 +1,171 @@
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { assets } from '../assets/assets'
+import Loader from '../components/Loader'
+import { useAppContext } from '../context/AppContext'
+import toast from 'react-hot-toast'
+import { motion } from 'motion/react'
+
+const VehicleDetails = () => {
+
+  const { id } = useParams()
+  const {vehicles, axios, pickupDate, setPickupDate, returnDate, setReturnDate, user, setShowLogin} = useAppContext()
+  const navigate = useNavigate()
+  const [vehicle, setVehicle] = useState(null)
+  const currency = import.meta.env.VITE_CURRENCY
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const {data} = await axios.post('/api/bookings/create', {vehicle: id, pickupDate, returnDate})
+      
+      if(data.success){
+        toast.success(data.message)
+        navigate('/my-bookings')
+      }else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(() => {
+    setVehicle(vehicles.find(vehicle => vehicle._id === id))
+  }, [vehicles, id])
+
+  return vehicle ? (
+    // SYNC: Added global background and text transition for the page
+    <div className='px-6 md:px-16 lg:px-24 xl:px-32 mt-16 transition-colors duration-300'>
+      <button
+        onClick={() => navigate("/vehicles")}
+        className='flex items-center gap-2 mb-6 text-gray-500 cursor-pointer dark:text-gray-300 hover:text-primary transition-colors'
+      >
+        <img src={assets.arrow_icon} alt="" className='rotate-180 opacity-65 dark:brightness-200'/>
+        Back to all Vehicles
+      </button>
+
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12'>
+        
+        <motion.div 
+        initial={{opacity: 0, y: 30}}
+        whileInView={{opacity: 1, y: 0}}
+        transition={{duration: 0.6}}
+
+        className='lg:col-span-2'>
+          <motion.img
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            src={vehicle.image}
+            alt=""
+            className='w-full h-auto md:max-h-100 object-cover rounded-xl mb-6 shadow-md'
+          />
+          <motion.div
+           initial={{opacity: 0 }}
+           animate={{opacity: 1 }}
+           transition={{duration: 0.5, delay: 0.2}}
+
+           className='space-y-6'>
+            <div>
+              {/* SYNC: Titles turn white for high contrast */}
+              <h1 className='text-3xl font-medium dark:text-white'>{vehicle.brand} {vehicle.model}</h1>
+              <p className='text-gray-500 text-lg dark:text-gray-400'>{vehicle.category} • {vehicle.year}</p>
+            </div>
+
+            <hr className='border-borderColor my-6 dark:border-gray-700'/>
+
+            <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
+              {[
+                { icon: assets.fuel_icon, text: `${vehicle.seating_capacity} Seats` },
+                { icon: assets.users_icon, text: vehicle.fuel_type },
+                { icon: assets.car_icon, text: vehicle.transmission },
+                { icon: assets.location_icon, text: vehicle.location },
+              ].map((item, idx) => (
+                <motion.div
+                  initial={{opacity: 0, y: 10}}
+                  animate={{opacity: 1, y: 0}}
+                  transition={{duration: 0.4 }}
+                  key={idx}
+                  // SYNC: Applied dark:bg-slate-800 for card backgrounds and dark:text-gray-300
+                  className='flex flex-col items-center bg-light dark:bg-slate-800 p-4 rounded-lg text-gray-600 dark:text-gray-300 transition-colors'
+                >
+                  <img src={item.icon} alt="" className='h-5 mb-2 dark:brightness-200'/>
+                  {item.text}
+                </motion.div>
+              ))}
+            </div>
+
+            <div>
+              <h1 className='text-xl font-medium mb-3 dark:text-white'>Description</h1>
+              <p className='text-gray-500 dark:text-gray-400'>{vehicle.description}</p>
+            </div>
+
+            <div>
+              <h1 className='text-xl font-medium mb-3 dark:text-white'>Features</h1>
+              <ul className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                {["360 Camera", "Bluetooth", "GPS", "Heated Seats", "Rear View Mirror"].map((feature, idx) => (
+                  <li key={idx} className='flex items-center text-gray-500 dark:text-gray-400'>
+                    <img src={assets.check_icon} alt="" className='h-4 mr-2 dark:brightness-200'/>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        <motion.form
+          initial={{opacity: 0, y: 30}}
+          whileInView={{opacity: 1, y: 0}}
+          transition={{duration: 0.6, delay: 0.2}}
+          
+          onSubmit={handleSubmit}
+          // SYNC: Cleaned redundant classes and applied dark:bg-slate-800 for the sticky form
+          className='shadow-lg h-max sticky top-18 rounded-xl p-6 space-y-6 text-gray-500 dark:text-gray-300 bg-white dark:bg-slate-800 transition-colors'
+        >
+          <p className='flex items-center justify-between text-2xl text-gray-800 font-semibold dark:text-white'>
+            {currency}{vehicle.pricePerDay}
+            <span className='text-base text-gray-400 font-normal dark:text-gray-400'>per day</span>
+          </p>
+
+          <hr className='border-borderColor my-6 dark:border-gray-700'/>
+
+          <div className='flex flex-col gap-2'>
+            <label htmlFor="pickup-date" className="dark:text-gray-300">Pickup Date</label>
+            <input value={pickupDate} onChange={(e) => setPickupDate(e.target.value)}
+              type="date"
+              // SYNC: Applied dark input backgrounds and borders
+              className='border border-borderColor px-3 py-2 rounded-lg dark:bg-slate-900 dark:border-gray-700 dark:text-white outline-none transition-colors'
+              required
+              id="pickup-date"
+              min={new Date().toISOString().split("T")[0]}
+            />
+          </div>
+
+          <div className='flex flex-col gap-2'>
+            <label htmlFor="return-date" className="dark:text-gray-300">Return Date</label>
+            <input value ={returnDate} onChange={(e) => setReturnDate(e.target.value)}
+              type="date"
+              className='border border-borderColor px-3 py-2 rounded-lg dark:bg-slate-900 dark:border-gray-700 dark:text-white outline-none transition-colors'
+              required
+              id="return-date"
+              min={pickupDate}
+            />
+          </div>
+
+          <button
+            type="submit"
+            className='w-full bg-primary hover:bg-primary-dill transition-all py-3 font-medium text-white rounded-xl cursor-pointer'
+          >
+            Book Now
+          </button>
+
+          <p className='text-center text-sm dark:text-gray-400'>No credit card required to reserve</p>
+        </motion.form>
+      </div>
+    </div>
+  ) : <Loader/>
+}
+
+export default VehicleDetails
