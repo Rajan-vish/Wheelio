@@ -1,11 +1,26 @@
 import Booking from "../models/Booking.js";
 import Vehicle from "../models/Vehicle.js";
 
+
+// checkAvailability()
+//         ↓
+// Find overlapping bookings
+//         ↓
+// booking.length === 0 ?
+//         ↓
+// YES → Available
+// NO  → Not available
 // Function to check Availability of Vehicle for a given Date
 const checkAvailability = async (vehicle, pickupDate, returnDate) => {
     const booking = await Booking.find({
         vehicle,
+//         //existing booking pickup date
+//         <=
+// new requested return date
         pickupDate: { $lte: returnDate },
+//         existing booking return date
+//         >=
+// new requested pickup date
         returnDate: { $gte: pickupDate },
     });
     return booking.length === 0;
