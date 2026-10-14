@@ -1,32 +1,39 @@
 # 🚗 Wheelio — Full-Stack Car Rental & Fleet Management Platform
 
-A modern, production-grade **MERN** car rental platform delivering a seamless experience for renters to discover, filter, and book vehicles, paired with an administrative fleet dashboard for vehicle inventory, pricing, and booking lifecycle management.
+A modern, production-grade **MERN** car rental platform delivering a seamless experience for renters to discover, filter, and book vehicles, paired with an administrative fleet dashboard for vehicle inventory, dynamic pricing, Stripe payment processing, and booking lifecycle management.
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://wheelio-spua.vercel.app/)
+[![Backend Status](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://wheelio-backend.onrender.com)
+[![Stripe](https://img.shields.io/badge/Stripe-Payments%20%26%20Webhooks-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
 [![React](https://img.shields.io/badge/React-18%20(Vite)-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express-4.x-black?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-🌐 **Live Deployment:** [https://wheelio-spua.vercel.app/](https://wheelio-spua.vercel.app/)
+🌐 **Live Client (Vercel):** [https://wheelio-spua.vercel.app/](https://wheelio-spua.vercel.app/)  
+⚙️ **Live API (Render):** [https://wheelio-backend.onrender.com/](https://wheelio-backend.onrender.com/)
 
 ---
 
 ## 🌟 Key Engineering Features
 
-### 👤 Customer Experience
-- **Dual Authentication**: Standard Email/Password registration alongside secure **Google OAuth 2.0 Authorization Code Flow** with automated profile onboarding.
+### 👤 Customer Experience & Booking Engine
+- **Dual Authentication**: Standard Email/Password registration with Bcrypt hashing alongside secure **Google OAuth 2.0 Authorization Code Flow** with automatic profile picture and onboarding sync.
 - **Dynamic Vehicle Search & Filtering**: Multi-parameter search by city location, price per day, seating capacity, and transmission type.
 - **Location Autocomplete**: Powered by **Geoapify Geocoding API** for exact pickup/drop-off point selection.
-- **Booking Flow & Availability Validation**: Real-time server-side conflict detection preventing double-booking across overlapping calendar dates.
-- **Customer Portal**: "My Bookings" interface displaying active, upcoming, and past reservations with live status badges.
+- **Double-Booking Prevention Algorithm**: Real-time server-side date conflict engine (`checkAvailability`) using MongoDB `$lte` and `$gte` comparison operators to mathematically prevent overlapping reservations.
+- **💳 Stripe Payment Gateway & Idempotent Webhooks**:
+  - **Server-Side Calculated Pricing**: Guarantees zero client-side price tampering by computing total duration rates on the backend.
+  - **Cryptographically Verified Webhooks**: Listens directly for server-to-server Stripe events (`checkout.session.completed`) using raw-buffer signature verification (`stripe.webhooks.constructEvent`).
+  - **Idempotency Guard**: Prevents duplicate charges or multiple booking confirmations in case of network retries.
+- **Customer Portal**: "My Bookings" interface displaying active, upcoming, and past reservations with live status badges (`Confirmed`, `Pending`, `💳 Paid`, `💵 Pay on Pickup`).
 - **Theme & Responsiveness**: Mobile-first design with built-in Light/Dark mode state toggle and Framer Motion micro-interactions.
 
 ### 🛡️ Admin & Fleet Management
 - **Business Analytics Dashboard**: Summary KPIs on total fleet revenue, active rentals, and vehicle utilization rates.
-- **Inventory CRUD**: Multi-image cloud upload via **ImageKit CDN** with automatic thumbnailing and responsive delivery.
-- **Booking Lifecycle Control**: Single-click status transitions (Pending $\rightarrow$ Confirmed $\rightarrow$ Completed $\rightarrow$ Cancelled) and automated email triggers via **Resend**.
+- **Inventory Cloud Upload**: Direct-to-cloud file streaming via **Multer memory storage** into **ImageKit CDN** with automatic WebP compression.
+- **Booking Lifecycle Control**: Single-click status transitions (Pending $\rightarrow$ Confirmed $\rightarrow$ Cancelled) and automated email triggers via **Resend**.
 
 ---
 
@@ -45,13 +52,14 @@ A modern, production-grade **MERN** car rental platform delivering a seamless ex
 │                    Backend Server (Node.js + Express)                  │
 │   • JWT Auth & Google OAuth Verifier                                   │
 │   • Booking Date Conflict Engine (`checkAvailability`)                 │
+│   • Stripe Payment Session Generator & Idempotent Webhook Engine       │
 │   • Vehicle Inventory Controllers                                      │
 └───────────────┬───────────────────┬────────────────────┬───────────────┘
                 │                   │                    │
     ┌───────────▼────────┐ ┌────────▼──────────┐  ┌──────▼──────────────┐
-    │   MongoDB Atlas    │ │ ImageKit Cloud    │  │ Resend Email Engine │
-    │ (Users, Cars,      │ │ (Optimized Car    │  │ (Booking Confirms   │
-    │  Bookings)         │ │  Asset Hosting)   │  │  & Alerts)          │
+    │   MongoDB Atlas    │ │ ImageKit Cloud    │  │ Stripe & Resend     │
+    │ (Users, Cars,      │ │ (Optimized Car    │  │ (Payments, Webhooks,│
+    │  Bookings)         │ │  Asset Hosting)   │  │  & Emails)          │
     └────────────────────┘ └───────────────────┘  └─────────────────────┘
 ```
 
@@ -68,8 +76,9 @@ A modern, production-grade **MERN** car rental platform delivering a seamless ex
 | **Server** | Node.js, Express.js | Event-driven non-blocking I/O microservice |
 | **Database** | MongoDB Atlas, Mongoose | Flexible document schema for variable vehicle attributes |
 | **Auth** | JWT, Google OAuth 2.0, Bcryptjs | Multi-provider identity and secure token hashing |
+| **Payments** | Stripe API & Webhooks | Server-side checkout sessions, signature verification & idempotency |
 | **External APIs** | Geoapify, ImageKit, Resend | Geocoding, cloud media acceleration, transactional emails |
-| **Hosting** | Vercel (Client & Server) | Fast global CDN edge delivery |
+| **Hosting** | Vercel (Client) & Render (Server) | Global edge CDN & containerized microservice |
 
 ---
 
@@ -80,6 +89,7 @@ A modern, production-grade **MERN** car rental platform delivering a seamless ex
 - MongoDB Atlas cluster URL
 - Google Cloud Console Project (OAuth 2.0 Credentials)
 - ImageKit account (Keys + URL endpoint)
+- Stripe Account (Test API Secret Key)
 - (Optional) Resend API key for notification emails
 
 ### 1. Clone the Repository
@@ -108,6 +118,11 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
 IMAGEKIT_URL_ENDPOINT=your_imagekit_endpoint
+
+# Stripe Payments
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_signing_secret
+CURRENCY=inr
 
 # Email Service (Optional)
 RESEND_API_KEY=your_resend_api_key
@@ -145,22 +160,24 @@ Open `http://localhost:5173` to explore the app.
 ## 📡 API Specification
 
 ### Authentication
-- `POST /api/auth/register` — Create user account with hashed password
-- `POST /api/auth/login` — Sign in and receive authorization bearer token
-- `POST /api/auth/google` — Exchange Google auth code for session token
+- `POST /api/user/register` — Create user account with hashed password
+- `POST /api/user/login` — Sign in and receive authorization bearer token
+- `POST /api/user/google` — Exchange Google auth code for session token
 
 ### Vehicles & Inventory
-- `GET /api/cars` — Filter cars by location, price, category, and date availability
-- `GET /api/cars/:id` — Detailed vehicle specifications and images
-- `POST /api/cars` — Create vehicle listing (Admin only, ImageKit upload)
-- `PUT /api/cars/:id` — Update vehicle pricing/details (Admin only)
-- `DELETE /api/cars/:id` — Remove vehicle from fleet (Admin only)
+- `GET /api/user/vehicles` — Filter cars by location, price, category, and date availability
+- `POST /api/owner/add-vehicle` — Create vehicle listing (ImageKit buffer upload)
+- `POST /api/owner/toggle-car` — Toggle vehicle availability status
+- `POST /api/owner/delete-car` — Delete vehicle listing
 
-### Bookings & Reservations
-- `POST /api/bookings` — Reserve vehicle with date conflict verification
-- `GET /api/bookings/my-bookings` — Retrieve authenticated user's reservations
-- `GET /api/bookings/admin/all` — Fleet-wide booking register (Admin only)
-- `PATCH /api/bookings/:id/status` — Advance booking state (Confirmed, Completed, Cancelled)
+### Bookings & Stripe Payments
+- `POST /api/bookings/check-availability` — Verify date overlap logic
+- `POST /api/bookings/create` — Reserve vehicle with Pay on Pickup
+- `POST /api/bookings/stripe-checkout` — Create hosted Stripe Checkout Session
+- `POST /api/bookings/webhook` — Raw buffer Stripe Webhook handler with idempotency check
+- `POST /api/bookings/verify-payment` — Confirm session payment upon redirect
+- `GET /api/bookings/user` — Retrieve authenticated user's reservations
+- `GET /api/bookings/owner` — Fleet-wide booking register for owner
 
 ---
 
@@ -171,20 +188,20 @@ Wheelio/
 ├── client/                     # Vite + React Frontend
 │   ├── src/
 │   │   ├── assets/             # Static graphics and icons
-│   │   ├── components/         # Navbar, CarCard, DatePicker, Modal widgets
-│   │   ├── context/            # AuthContext, ThemeContext, CartContext
-│   │   ├── pages/              # Home, Cars, Details, Bookings, AdminDashboard
-│   │   ├── App.jsx             # Route definitions
+│   │   ├── components/         # Navbar, VehicleCard, DatePicker, Login Modal
+│   │   ├── context/            # AppContext (global user, token, theme state)
+│   │   ├── pages/              # Home, Vehicles, Details, MyBookings, Owner Dashboard
+│   │   ├── App.jsx             # Route definitions & layout wrappers
 │   │   └── main.jsx
 │   ├── package.json
 │   └── vite.config.js
 ├── server/                     # Node.js + Express Backend
-│   ├── configs/                # MongoDB, ImageKit, Resend configuration
-│   ├── controllers/            # Car, Booking, and User business logic
-│   ├── middleware/             # Auth guard, admin gate, error handler
-│   ├── models/                 # Car.js, Booking.js, User.js schemas
+│   ├── configs/                # MongoDB, ImageKit, Stripe configuration
+│   ├── controllers/            # Booking, User, Owner, and Newsletter business logic
+│   ├── middleware/             # Auth guard (JWT protect), Multer memory storage
+│   ├── models/                 # Vehicle.js, Booking.js, User.js schemas
 │   ├── routes/                 # Express route manifests
-│   ├── server.js               # Express application entry point
+│   ├── server.js               # Express entry point (Raw Stripe Webhook + JSON parsers)
 │   └── package.json
 └── README.md                   # Documentation
 ```
