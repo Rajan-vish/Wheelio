@@ -12,22 +12,62 @@ const VehicleDetails = () => {
   const {vehicles, axios, pickupDate, setPickupDate, returnDate, setReturnDate, user, setShowLogin} = useAppContext()
   const navigate = useNavigate()
   const [vehicle, setVehicle] = useState(null)
+  const [loadingPayment, setLoadingPayment] = useState(false)
   const currency = import.meta.env.VITE_CURRENCY
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleBooking = async (payOnline = false) => {
+    if (!user) {
+      toast.error("Please login to book a vehicle")
+      return setShowLogin(true)
+    }
+
+    if (!pickupDate || !returnDate) {
+      return toast.error("Please select pickup and return dates")
+    }
+
     try {
-      const {data} = await axios.post('/api/bookings/create', {vehicle: id, pickupDate, returnDate})
-      
-      if(data.success){
-        toast.success(data.message)
-        navigate('/my-bookings')
-      }else{
-        toast.error(data.message)
+      setLoadingPayment(true)
+
+      if (payOnline) {
+        // Stripe Checkout flow
+        const { data } = await axios.post('/api/bookings/stripe-checkout', {
+          vehicle: id,
+          pickupDate,
+          returnDate,
+        })
+
+        if (data.success && data.url) {
+          toast.loading("Redirecting to secure Stripe checkout...")
+          window.location.href = data.url
+          return
+        } else {
+          toast.error(data.message || "Stripe checkout unavailable. You can reserve with Pay on Pickup.")
+        }
+      } else {
+        // Direct Reservation flow
+        const { data } = await axios.post('/api/bookings/create', {
+          vehicle: id,
+          pickupDate,
+          returnDate,
+        })
+
+        if (data.success) {
+          toast.success(data.message)
+          navigate('/my-bookings')
+        } else {
+          toast.error(data.message)
+        }
       }
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.response?.data?.message || error.message)
+    } finally {
+      setLoadingPayment(false)
     }
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    handleBooking(true)
   }
 
   useEffect(() => {
@@ -154,14 +194,29 @@ const VehicleDetails = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            className='w-full bg-primary hover:bg-primary-dill transition-all py-3 font-medium text-white rounded-xl cursor-pointer'
-          >
-            Book Now
-          </button>
+          <div className='space-y-3 pt-2'>
+            <button
+              type="button"
+              disabled={loadingPayment}
+              onClick={() => handleBooking(true)}
+              className='w-full bg-primary hover:bg-primary-dill transition-all py-3 font-medium text-white rounded-xl cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50'
+            >
+              {loadingPayment ? "Processing..." : "💳 Pay Online with Stripe"}
+            </button>
 
-          <p className='text-center text-sm dark:text-gray-400'>No credit card required to reserve</p>
+            <button
+              type="button"
+              disabled={loadingPayment}
+              onClick={() => handleBooking(false)}
+              className='w-full bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700 border border-borderColor dark:border-gray-700 transition-all py-2.5 font-medium text-gray-700 dark:text-gray-200 rounded-xl cursor-pointer disabled:opacity-50'
+            >
+              Reserve & Pay on Pickup
+            </button>
+          </div>
+
+          <p className='text-center text-xs text-gray-400 dark:text-gray-400'>
+            🔒 Payments secured with 256-bit Stripe encryption
+          </p>
         </motion.form>
       </div>
     </div>

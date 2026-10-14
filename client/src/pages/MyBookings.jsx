@@ -24,7 +24,26 @@ const MyBookings = () => {
   }
 
   useEffect(() => {
-    user && fetchMyBookings();
+    if (user) {
+      fetchMyBookings();
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const paymentStatus = searchParams.get('payment');
+      const sessionId = searchParams.get('session_id');
+
+      if (paymentStatus === 'success' && sessionId) {
+        axios.post('/api/bookings/verify-payment', { sessionId }).then(({ data }) => {
+          if (data.success && data.paymentStatus === 'paid') {
+            toast.success("Payment successful! Your booking is confirmed.");
+            fetchMyBookings();
+          }
+        }).catch(() => {});
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (paymentStatus === 'cancelled') {
+        toast.error("Payment was cancelled.");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }, [user]);
 
   return (
@@ -76,14 +95,31 @@ const MyBookings = () => {
                 {/* SYNC: bg-light -> dark:bg-slate-800 */}
                 <p className='px-3 py-1.5 bg-light dark:bg-slate-800 rounded dark:text-gray-300'>Booking #{index + 1}</p>
                 <p 
-                  className={`px-3 py-1 text-xs rounded-full ${
+                  className={`px-3 py-1 text-xs rounded-full capitalize ${
                     booking.status === "confirmed" 
                       ? "bg-green-400/15 text-green-600 dark:text-green-400" 
+                      : booking.status === "pending"
+                      ? "bg-amber-400/15 text-amber-600 dark:text-amber-400"
                       : "bg-red-400/15 text-red-600 dark:text-red-400"
                   }`}
                 >
                   {booking.status}
                 </p>
+                {booking.paymentStatus && (
+                  <p 
+                    className={`px-2.5 py-0.5 text-xs rounded-full ${
+                      booking.paymentStatus === "paid"
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                        : booking.paymentStatus === "pending"
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        : booking.paymentStatus === "failed"
+                        ? "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20"
+                        : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                    }`}
+                  >
+                    {booking.paymentStatus === "paid" ? "💳 Paid" : booking.paymentStatus === "pending" ? "⏳ Payment Pending" : "💵 Pay on Pickup"}
+                  </p>
+                )}
               </div>
 
               <div className='flex items-start gap-2 mt-3'>

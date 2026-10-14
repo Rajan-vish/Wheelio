@@ -6,12 +6,21 @@ import userRouter from "./routes/userRoutes.js";
 import ownerRouter from "./routes/ownerRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
+import { stripeWebhook } from "./controllers/bookingController.js";
 
 const app = express();
 
 await connectDB();
 
 app.use(cors());
+
+// Stripe Webhook MUST receive raw buffer body for signature verification BEFORE express.json()
+app.post(
+  "/api/bookings/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
+
 app.use(express.json());
 
 app.get("/", (req, res) => res.send("Server is running"));
