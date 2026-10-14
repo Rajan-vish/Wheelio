@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const connectDB = async () => {
   try {
     mongoose.connection.on("connected", () => console.log("Database Connected"));
-    const uri = process.env.MONGODB_URI || "";
+    let uri = process.env.MONGODB_URI || "";
+    uri = uri.replace(/\/wheelio(?=[/?#]|$)/i, "/Wheelio");
     await mongoose.connect(uri, {
       dbName: "Wheelio",
     });
