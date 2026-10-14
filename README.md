@@ -179,6 +179,10 @@ Open `http://localhost:5173` to explore the app.
 - `GET /api/bookings/user` — Retrieve authenticated user's reservations
 - `GET /api/bookings/owner` — Fleet-wide booking register for owner
 
+### Reviews & Ratings Engine (MongoDB Aggregation)
+- `POST /api/reviews/add` — Submit review & recalculate rating via aggregation pipeline (Verified renters only)
+- `GET /api/reviews/:vehicleId` — Retrieve vehicle reviews with star rating breakdown
+
 ---
 
 ## 📁 Project Structure
