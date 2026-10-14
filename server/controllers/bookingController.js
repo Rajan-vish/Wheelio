@@ -181,11 +181,10 @@ export const createStripeCheckout = async (req, res) => {
 
         // Determine frontend origin for redirects
         const origin = req.headers.origin || process.env.CLIENT_URL || "http://localhost:5173";
-        const currency = (process.env.CURRENCY || "usd").toLowerCase();
+        const currency = (process.env.CURRENCY || "inr").toLowerCase();
 
-        // Create Stripe Checkout Session
+        // Create Stripe Checkout Session (uses dynamic payment methods automatically)
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ["card"],
             line_items: [
                 {
                     price_data: {
