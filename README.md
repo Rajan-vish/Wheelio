@@ -27,10 +27,16 @@ A modern, production-grade **MERN** car rental platform delivering a seamless ex
   - **Server-Side Calculated Pricing**: Guarantees zero client-side price tampering by computing total duration rates on the backend.
   - **Cryptographically Verified Webhooks**: Listens directly for server-to-server Stripe events (`checkout.session.completed`) using raw-buffer signature verification (`stripe.webhooks.constructEvent`).
   - **Idempotency Guard**: Prevents duplicate charges or multiple booking confirmations in case of network retries.
+- **⭐ Customer Reviews & Rating Engine**:
+  - **Verified Renter Guard**: Restricts review submissions to customers with confirmed/paid reservations for that specific car.
+  - **MongoDB Aggregation Pipeline**: Employs `$match`, `$group`, `$avg`, and `$sum` operators to compute real-time average ratings and 1-to-5 star rating distribution breakdowns in a single database pass.
+  - **Interactive Feedback Modal**: Dynamic star picker and review dialog in "My Bookings", with real-time rating badges on vehicle cards and detail pages.
 - **Customer Portal**: "My Bookings" interface displaying active, upcoming, and past reservations with live status badges (`Confirmed`, `Pending`, `💳 Paid`, `💵 Pay on Pickup`).
 - **Theme & Responsiveness**: Mobile-first design with built-in Light/Dark mode state toggle and Framer Motion micro-interactions.
 
-### 🛡️ Admin & Fleet Management
+### 🛡️ Production Security & Fleet Management
+- **Security Headers (`helmet`)**: Enforces secure HTTP headers, cross-origin resource policy, and clickjacking protection.
+- **Brute-Force & DDoS Rate Limiting (`express-rate-limit`)**: Two-tier defense applying strict throttles on authentication routes (20 req / 15 min) and fleet endpoints (500 req / 15 min).
 - **Business Analytics Dashboard**: Summary KPIs on total fleet revenue, active rentals, and vehicle utilization rates.
 - **Inventory Cloud Upload**: Direct-to-cloud file streaming via **Multer memory storage** into **ImageKit CDN** with automatic WebP compression.
 - **Booking Lifecycle Control**: Single-click status transitions (Pending $\rightarrow$ Confirmed $\rightarrow$ Cancelled) and automated email triggers via **Resend**.
@@ -74,7 +80,8 @@ A modern, production-grade **MERN** car rental platform delivering a seamless ex
 | **Styling** | Tailwind CSS | Utility-first responsive design system with dark mode |
 | **Icons & Motion** | Lucide React, Framer Motion | Smooth transitions and clean, modern SVG UI icons |
 | **Server** | Node.js, Express.js | Event-driven non-blocking I/O microservice |
-| **Database** | MongoDB Atlas, Mongoose | Flexible document schema for variable vehicle attributes |
+| **Security** | Helmet, Express-Rate-Limit | HTTP security headers & multi-tier brute-force API protection |
+| **Database** | MongoDB Atlas, Mongoose | Aggregation pipelines (`$group`, `$avg`), compound indices, and schema validation |
 | **Auth** | JWT, Google OAuth 2.0, Bcryptjs | Multi-provider identity and secure token hashing |
 | **Payments** | Stripe API & Webhooks | Server-side checkout sessions, signature verification & idempotency |
 | **External APIs** | Geoapify, ImageKit, Resend | Geocoding, cloud media acceleration, transactional emails |
@@ -201,11 +208,11 @@ Wheelio/
 │   └── vite.config.js
 ├── server/                     # Node.js + Express Backend
 │   ├── configs/                # MongoDB, ImageKit, Stripe configuration
-│   ├── controllers/            # Booking, User, Owner, and Newsletter business logic
+│   ├── controllers/            # Booking, Review, User, Owner, and Newsletter controllers
 │   ├── middleware/             # Auth guard (JWT protect), Multer memory storage
-│   ├── models/                 # Vehicle.js, Booking.js, User.js schemas
-│   ├── routes/                 # Express route manifests
-│   ├── server.js               # Express entry point (Raw Stripe Webhook + JSON parsers)
+│   ├── models/                 # Vehicle.js, Booking.js, Review.js, User.js schemas
+│   ├── routes/                 # bookingRoutes, reviewRoutes, userRoutes, ownerRoutes
+│   ├── server.js               # Express entry point (Helmet, Rate Limiters, Raw Stripe Webhooks)
 │   └── package.json
 └── README.md                   # Documentation
 ```
