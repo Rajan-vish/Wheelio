@@ -44,6 +44,12 @@ const VehicleCard = ({ vehicle }) => {
             {/* SYNC: Added dark:text-gray-400 for category subtitle */}
             <p className='text-muted-foreground text-sm text-gray-500 dark:text-gray-400'>{vehicle.category} • {vehicle.year}</p>
           </div>
+          {vehicle.averageRating > 0 && (
+            <div className='flex items-center gap-1 text-xs font-semibold text-amber-500 bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 rounded-full shrink-0'>
+              <span>★</span>
+              <span>{vehicle.averageRating}</span>
+            </div>
+          )}
         </div>
 
         {/* SYNC: Maintained dark:text-gray-300 for feature list */}

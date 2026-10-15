@@ -45,20 +45,16 @@ export const addReview = async (req, res) => {
       return res.json({ success: false, message: "Rating must be between 1 and 5." });
     }
 
-    // Business Logic: Only verified customers with a confirmed or paid booking can review
+    // Business Logic: Verify customer has booked this vehicle
     const hasBooked = await Booking.findOne({
       vehicle: vehicleId,
       user: userId,
-      $or: [
-        { status: "confirmed" },
-        { paymentStatus: "paid" },
-      ],
     });
 
     if (!hasBooked) {
       return res.json({
         success: false,
-        message: "Only verified renters with a confirmed booking can review this vehicle.",
+        message: "You can only review vehicles you have booked.",
       });
     }
 

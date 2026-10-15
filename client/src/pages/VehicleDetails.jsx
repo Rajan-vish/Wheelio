@@ -13,7 +13,19 @@ const VehicleDetails = () => {
   const navigate = useNavigate()
   const [vehicle, setVehicle] = useState(null)
   const [loadingPayment, setLoadingPayment] = useState(false)
+  const [reviews, setReviews] = useState([])
   const currency = import.meta.env.VITE_CURRENCY
+
+  const fetchReviews = async () => {
+    try {
+      const { data } = await axios.get(`/api/reviews/${id}`);
+      if (data.success) {
+        setReviews(data.reviews || []);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
 
   const handleBooking = async (payOnline = false) => {
     if (!user) {
@@ -72,6 +84,9 @@ const VehicleDetails = () => {
 
   useEffect(() => {
     setVehicle(vehicles.find(vehicle => vehicle._id === id))
+    if (id) {
+      fetchReviews()
+    }
   }, [vehicles, id])
 
   return vehicle ? (
@@ -110,7 +125,16 @@ const VehicleDetails = () => {
             <div>
               {/* SYNC: Titles turn white for high contrast */}
               <h1 className='text-3xl font-medium dark:text-white'>{vehicle.brand} {vehicle.model}</h1>
-              <p className='text-gray-500 text-lg dark:text-gray-400'>{vehicle.category} • {vehicle.year}</p>
+              <div className='flex items-center gap-3 mt-1.5 flex-wrap'>
+                <p className='text-gray-500 text-lg dark:text-gray-400'>{vehicle.category} • {vehicle.year}</p>
+                <div className='flex items-center gap-1.5 text-xs font-semibold text-amber-500 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 px-2.5 py-0.5 rounded-full'>
+                  <span>★</span>
+                  <span>{vehicle.averageRating > 0 ? vehicle.averageRating : 'New'}</span>
+                  <span className='text-gray-400 font-normal'>
+                    ({vehicle.totalReviews || reviews.length} {vehicle.totalReviews === 1 || reviews.length === 1 ? 'review' : 'reviews'})
+                  </span>
+                </div>
+              </div>
             </div>
 
             <hr className='border-borderColor my-6 dark:border-gray-700'/>
@@ -151,6 +175,58 @@ const VehicleDetails = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Customer Reviews Section */}
+            <div className='pt-6 border-t border-borderColor dark:border-gray-700 space-y-4'>
+              <div className='flex items-center justify-between'>
+                <h2 className='text-xl font-medium dark:text-white flex items-center gap-2'>
+                  <span>Customer Reviews</span>
+                  <span className='text-sm text-gray-400 font-normal'>({reviews.length})</span>
+                </h2>
+              </div>
+
+              {reviews.length === 0 ? (
+                <p className='text-gray-400 text-sm italic'>No reviews yet for this vehicle. Be the first to rent and rate it!</p>
+              ) : (
+                <div className='space-y-3.5'>
+                  {reviews.map((rev) => (
+                    <div
+                      key={rev._id}
+                      className='p-4 rounded-xl bg-light dark:bg-slate-800 border border-borderColor dark:border-gray-700 space-y-2.5 transition-colors'
+                    >
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-3'>
+                          <div className='w-9 h-9 rounded-full bg-primary/15 text-primary font-semibold flex items-center justify-center text-sm overflow-hidden border border-primary/20'>
+                            {rev.user?.image ? (
+                              <img src={rev.user.image} alt={rev.user.name} className='w-full h-full object-cover'/>
+                            ) : (
+                              (rev.user?.name || 'R').charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div>
+                            <p className='text-sm font-medium dark:text-white'>{rev.user?.name || 'Verified Renter'}</p>
+                            <p className='text-xs text-gray-400'>{new Date(rev.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+
+                        <div className='flex items-center text-amber-400 text-sm'>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={star <= rev.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className='text-sm text-gray-600 dark:text-gray-300 pl-12'>{rev.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>

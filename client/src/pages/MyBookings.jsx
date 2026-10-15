@@ -9,6 +9,45 @@ const MyBookings = () => {
 
   const {axios, user, currency} = useAppContext()
   const [bookings, setBookings] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const openReviewModal = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setRating(5);
+    setComment("");
+    setShowReviewModal(true);
+  };
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      return toast.error("Please provide feedback for this vehicle.");
+    }
+    try {
+      setSubmittingReview(true);
+      const { data } = await axios.post("/api/reviews/add", {
+        vehicleId: selectedVehicle._id,
+        rating,
+        comment,
+      });
+
+      if (data.success) {
+        toast.success(data.message || "Thank you for your rating!");
+        setShowReviewModal(false);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const fetchMyBookings = async () => {
     try {
@@ -142,17 +181,116 @@ const MyBookings = () => {
               </div>
             </div>
 
-            {/* Price */}
-            <div className='md:col-span-1 flex flex-col justify-between gap-6'>
+            {/* Price & Actions */}
+            <div className='md:col-span-1 flex flex-col justify-between items-end gap-4'>
              <div className='text-sm text-gray-500 dark:text-gray-400 text-right'>
               <p>Total Price</p>
               <h1 className='text-2xl font-semibold text-primary'>{currency}{booking.price}</h1>
               <p className='mt-1'>Booked on {booking.createdAt.split('T')[0]}</p>
              </div>
+
+             <button
+               onClick={() => openReviewModal(booking.vehicle)}
+               className='px-3.5 py-1.5 text-xs font-medium rounded-lg bg-primary/10 hover:bg-primary/20 text-primary dark:bg-primary/20 dark:hover:bg-primary/30 transition-all flex items-center gap-1.5 cursor-pointer border border-primary/20'
+             >
+               <span>⭐</span> Rate Vehicle
+             </button>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Review & Rating Modal */}
+      {showReviewModal && selectedVehicle && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-borderColor dark:border-gray-700 space-y-5"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold dark:text-white">
+                  Rate {selectedVehicle.brand} {selectedVehicle.model}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Share your rental experience</p>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={submitReview} className="space-y-4">
+              {/* Star Rating Selector */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Your Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setRating(star)}
+                      className="text-2xl cursor-pointer transition-transform hover:scale-110"
+                    >
+                      <span
+                        className={
+                          star <= (hoverRating || rating)
+                            ? "text-amber-400"
+                            : "text-gray-300 dark:text-gray-600"
+                        }
+                      >
+                        ★
+                      </span>
+                    </button>
+                  ))}
+                  <span className="text-sm font-semibold text-amber-500 self-center ml-2">
+                    {rating} / 5
+                  </span>
+                </div>
+              </div>
+
+              {/* Feedback Comment */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Your Review
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="How was the condition, cleanliness, and ride of the car?"
+                  className="w-full px-3 py-2 border border-borderColor dark:border-gray-700 rounded-xl dark:bg-slate-900 dark:text-white outline-none text-sm resize-none h-24 transition-colors"
+                  maxLength={500}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="px-5 py-2 text-xs font-medium text-white bg-primary hover:bg-primary-dill rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   )
 }
