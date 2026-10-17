@@ -131,6 +131,13 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_signing_secret
 CURRENCY=inr
 
+# AWS S3 Cloud Storage (Optional - falls back to ImageKit if omitted)
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET_NAME=your_s3_bucket_name
+AWS_CLOUDFRONT_URL=https://your-id.cloudfront.net # Optional
+
 # Email Service (Optional)
 RESEND_API_KEY=your_resend_api_key
 ```

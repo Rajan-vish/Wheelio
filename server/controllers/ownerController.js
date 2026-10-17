@@ -1,4 +1,4 @@
-import imagekit from "../configs/imageKit.js";
+import { uploadCloudImage } from "../configs/s3.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
@@ -22,24 +22,14 @@ export const addVehicle = async (req, res) => {
         const vehicle = JSON.parse(req.body.vehicleData);
         const imageFile = req.file;
 
-        // Upload Image to ImageKit
-        const response = await imagekit.upload({
-            file: imageFile.buffer,
-            fileName: imageFile.originalname,
-            folder: "/vehicles",
+        // Upload Image via Hybrid Cloud Storage (Amazon S3 with ImageKit fallback)
+        const image = await uploadCloudImage({
+            buffer: imageFile.buffer,
+            originalname: imageFile.originalname,
+            mimetype: imageFile.mimetype,
+            folder: "vehicles",
         });
 
-        // Optimization through imagekit URL transformation
-        const optimizedImageUrl = imagekit.url({
-            path: response.filePath,
-            transformation: [
-                { width: "1280" },
-                { quality: "auto" },
-                { format: "webp" },
-            ],
-        });
-
-        const image = optimizedImageUrl;
         await Vehicle.create({ ...vehicle, owner: _id, image });
 
         res.json({ success: true, message: "Vehicle Added" });
